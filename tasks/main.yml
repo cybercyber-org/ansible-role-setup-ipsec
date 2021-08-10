@@ -1,0 +1,41 @@
+- name: "Install Strongswan"
+  package:
+    name: strongswan
+    update_cache: yes
+- name: "Deactivate automatic routes"
+  lineinfile:
+    path: /etc/strongswan.d/charon.conf
+    regexp: "^([ \t]*).*install_routes =.*$"
+    line: "\\1install_routes = no"
+    backrefs: yes
+- name: "Add Strongswan config"
+  template:
+    dest: /etc/ipsec.conf
+    src: files/ipsec.conf.template
+  notify:
+    - Restart strongswan
+- name: "Add Strongswan secret"
+  template:
+    dest: /etc/ipsec.secrets
+    src: files/ipsec.secret.template
+  notify:
+    - Restart strongswan
+- name: "start strongswan"
+  systemd:
+    daemon_reload: yes
+    name: strongswan
+    enabled: yes
+    state: started
+- name: "configure networking"
+  blockinfile:
+    path: /etc/network/interfaces
+    block: |
+      auto ipsec0
+      iface ipsec0 inet manual
+        # please note that the "key" is the same as the "mark" in ipsec.conf
+        pre-up ip tunnel add ipsec0 local {{ ansible_default_ipv4.address }} remote {{ other }} mode vti key 158
+        post-up ip addr add {{ ipsec_net }} dev ipsec0
+        {% for route in routes %}
+        post-up ip route replace {{ route }} via {{ ipsec_net | ansible.netcommon.ipaddr('peer')}}
+        {% endfor %}
+        post-down ip tunnel del ipsec0

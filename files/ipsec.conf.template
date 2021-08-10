@@ -1,0 +1,26 @@
+config setup
+
+conn %default
+        ikelifetime=60m
+        keylife=20m
+        rekeymargin=3m
+        keyingtries=1
+        authby=secret
+        keyexchange=ikev2
+        mobike=no
+
+conn to-okvm
+        left={{ ansible_default_ipv4.address }}
+        leftsubnet=0.0.0.0/0
+        leftid={{ ansible_default_ipv4.address }}
+        leftfirewall=no
+        right={{ other }}
+        rightsubnet=0.0.0.0/0
+        rightid={{ other }}
+        ike=aes256-sha256-modp2048!
+        esp=aes256-sha256-modp2048!
+        pfs=yes
+        auto=start
+        lifetime=1h
+        # please note that the "mark" here is the same as the "key" in the tunnel configuration
+        mark=158
