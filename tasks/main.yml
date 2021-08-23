@@ -23,7 +23,7 @@
 - name: "start strongswan"
   systemd:
     daemon_reload: yes
-    name: strongswan
+    name: strongswan-starter
     enabled: yes
     state: started
 - name: "configure networking"

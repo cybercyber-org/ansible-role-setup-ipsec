@@ -1,4 +1,4 @@
 - name: Restart strongswan
   service:
-    name: strongswan
+    name: strongswan-starter
     state: restarted
