@@ -30,12 +30,15 @@
   blockinfile:
     path: /etc/network/interfaces
     block: |
-      auto ipsec0
-      iface ipsec0 inet manual
+      {% for item in ipsec_peers %}
+      # ipsec to {{ item.name }}
+      auto ipsec{{ loop.index0 }}
+      iface ipsec{{ loop.index0 }} inet manual
         # please note that the "key" is the same as the "mark" in ipsec.conf
-        pre-up ip tunnel add ipsec0 local {{ ansible_default_ipv4.address }} remote {{ other }} mode vti key 158
-        post-up ip addr add {{ ipsec_net }} dev ipsec0
-        {% for route in routes %}
-        post-up ip route replace {{ route }} via {{ ipsec_net | ansible.netcommon.ipaddr('peer')}}
+        pre-up ip tunnel add ipsec{{ loop.index0 }} local {{ ansible_default_ipv4.address }} remote {{ item.other }} mode vti key {{ 158 + loop.index0 }}
+        post-up ip addr add {{ item.ipsec_net }} dev ipsec{{ loop.index0 }}
+        {% for route in item.routes %}
+        post-up ip route replace {{ route }} via {{ item.ipsec_net | ansible.netcommon.ipaddr('peer')}}
         {% endfor %}
-        post-down ip tunnel del ipsec0
+        post-down ip tunnel del ipsec{{ loop.index0 }}
+      {% endfor %}

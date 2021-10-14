@@ -9,18 +9,20 @@ conn %default
         keyexchange=ikev2
         mobike=no
 
-conn to-okvm
+{% for peer in ipsec_peers %}
+conn to-{{ peer.name }}
         left={{ ansible_default_ipv4.address }}
         leftsubnet=0.0.0.0/0
         leftid={{ ansible_default_ipv4.address }}
         leftfirewall=no
-        right={{ other }}
+        right={{ peer.other }}
         rightsubnet=0.0.0.0/0
-        rightid={{ other }}
+        rightid={{ peer.other }}
         ike=aes256-sha256-modp2048!
         esp=aes256-sha256-modp2048!
         pfs=yes
         auto=start
         lifetime=1h
         # please note that the "mark" here is the same as the "key" in the tunnel configuration
-        mark=158
+        mark={{ 158 + loop.index0 }}
+{% endfor %}
