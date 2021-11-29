@@ -35,7 +35,7 @@
       auto ipsec{{ loop.index0 }}
       iface ipsec{{ loop.index0 }} inet manual
         # please note that the "key" is the same as the "mark" in ipsec.conf
-        pre-up ip tunnel add ipsec{{ loop.index0 }} local {{ ansible_default_ipv4.address }} remote {{ item.other }} mode vti key {{ 158 + loop.index0 }}
+        pre-up ip tunnel add ipsec{{ loop.index0 }} local {{ item.me }} remote {{ item.other }} mode vti key {{ 158 + loop.index0 }}
         post-up ip addr add {{ item.ipsec_net }} dev ipsec{{ loop.index0 }}
         {% for route in item.routes %}
         post-up ip route replace {{ route }} via {{ item.ipsec_net | ansible.netcommon.ipaddr('peer')}}

@@ -11,9 +11,9 @@ conn %default
 
 {% for peer in ipsec_peers %}
 conn to-{{ peer.name }}
-        left={{ ansible_default_ipv4.address }}
+        left={{ peer.me }}
         leftsubnet=0.0.0.0/0
-        leftid={{ ansible_default_ipv4.address }}
+        leftid={{ peer.myid }}
         leftfirewall=no
         right={{ peer.other }}
         rightsubnet=0.0.0.0/0
