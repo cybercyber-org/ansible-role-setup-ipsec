@@ -13,11 +13,11 @@ conn %default
 conn to-{{ peer.name }}
         left={{ peer.me }}
         leftsubnet=0.0.0.0/0
-        leftid={{ peer.myid }}
+        leftid={{ peer.myid if 'myid' in peer else peer.me }}
         leftfirewall=no
         right={{ peer.other }}
         rightsubnet=0.0.0.0/0
-        rightid={{ peer.other }}
+        rightid={{ peer.otherid if 'otherid' in peer else peer.other }}
         ike=aes256-sha256-modp2048!
         esp=aes256-sha256-modp2048!
         pfs=yes
