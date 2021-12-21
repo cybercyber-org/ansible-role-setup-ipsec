@@ -7,6 +7,7 @@ Install using `ansible-galaxy install cybercyber_org.setup_ipsec`.
 Supply the variable `ipsec_peers` with this content:
 
 ```yaml
+ipsec_namespace: ... # if you want to create the ipsec-connection in another namespace than the default one
 ipsec_peers:
 - name: ... # the name of the connection
   psk: ... # the PSK of the connection

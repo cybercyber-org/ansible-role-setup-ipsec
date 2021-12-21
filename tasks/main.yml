@@ -24,12 +24,23 @@
     mode: "0600"
   notify:
     - Restart strongswan
+- name: "move strongswan into network-namespace if configured"
+  when: "'ipsec_namespace' in vars"
+  ini_file:
+    path: /lib/systemd/system/strongswan-starter.service
+    option: NetworkNamespacePath
+    value: "/var/run/netns/{{ ipsec_namespace }}"
+    section: Service
 - name: "start strongswan"
   systemd:
     daemon_reload: true
     name: strongswan-starter
     enabled: true
     state: started
+- name: "prepare netns command"
+  set_fact:
+    netns_command: |
+      {{ 'ip netns exec ' + ipsec_namespace if 'ipsec_namespace' in vars else '' }}
 - name: "configure networking"
   blockinfile:
     path: /etc/network/interfaces
@@ -39,10 +50,11 @@
       auto ipsec{{ loop.index0 }}
       iface ipsec{{ loop.index0 }} inet manual
         # please note that the "key" is the same as the "mark" in ipsec.conf
-        pre-up ip tunnel add ipsec{{ loop.index0 }} local {{ item.me }} remote {{ item.other }} mode vti key {{ 158 + loop.index0 }}
-        post-up ip addr add {{ item.ipsec_net }} dev ipsec{{ loop.index0 }}
+        pre-up {{ netns_command | trim }} ip tunnel add ipsec{{ loop.index0 }} local {{ item.me }} remote {{ item.other }} mode vti key {{ 158 + loop.index0 }}
+        pre-up {{ netns_command | trim }} ip link set up dev ipsec{{ loop.index0 }}
+        post-up {{ netns_command | trim }} ip addr add {{ item.ipsec_net }} dev ipsec{{ loop.index0 }}
         {% for route in item.routes %}
-        post-up ip route replace {{ route }} via {{ item.ipsec_net | ansible.netcommon.ipaddr('peer') }}
+        post-up {{ netns_command | trim }} ip route replace {{ route }} via {{ item.ipsec_net | ansible.netcommon.ipaddr('peer') }}
         {% endfor %}
-        post-down ip tunnel del ipsec{{ loop.index0 }}
+        post-down {{ netns_command | trim }} ip tunnel del ipsec{{ loop.index0 }}
       {% endfor %}
