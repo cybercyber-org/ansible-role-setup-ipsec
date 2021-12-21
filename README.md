@@ -12,6 +12,7 @@ ipsec_peers:
 - name: ... # the name of the connection
   psk: ... # the PSK of the connection
   ipsec_net: ... # the network (CIDR) of the virtual interface (e.g. 192.168.44.5/30)
+  ipsec_net6: ... # the ipv6 network of the virtual interface (e.g. fd00:1::1/126)
   other: ... # the ip address of the other host
   otherid: ... # the id of the other side (optional)
   routes: ... # a list of CIDRs that should routed over the virtual tunnel interface

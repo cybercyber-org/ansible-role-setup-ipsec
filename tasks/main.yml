@@ -53,6 +53,9 @@
         pre-up {{ netns_command | trim }} ip tunnel add ipsec{{ loop.index0 }} local {{ item.me }} {{ "remote " + item.other if item.other != "%any" else "" }} mode vti key {{ 158 + loop.index0 }}
         pre-up {{ netns_command | trim }} ip link set up dev ipsec{{ loop.index0 }}
         post-up {{ netns_command | trim }} ip addr add {{ item.ipsec_net }} dev ipsec{{ loop.index0 }}
+        {% if 'ipsec_net6' in item %}
+        post-up {{ netns_command | trim }} ip -6 addr add {{ item.ipsec_net6 }} dev ipsec{{ loop.index0 }}
+        {% endif %}
         {% for route in item.routes %}
         post-up {{ netns_command | trim }} ip route replace {{ route }} via {{ item.ipsec_net | ansible.netcommon.ipaddr('peer') }}
         {% endfor %}
