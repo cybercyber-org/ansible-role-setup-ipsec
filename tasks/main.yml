@@ -50,7 +50,7 @@
       auto ipsec{{ loop.index0 }}
       iface ipsec{{ loop.index0 }} inet manual
         # please note that the "key" is the same as the "mark" in ipsec.conf
-        pre-up {{ netns_command | trim }} ip tunnel add ipsec{{ loop.index0 }} local {{ item.me }} remote {{ item.other }} mode vti key {{ 158 + loop.index0 }}
+        pre-up {{ netns_command | trim }} ip tunnel add ipsec{{ loop.index0 }} local {{ item.me }} {{ "remote " + item.other if item.other != "%any" else "" }} mode vti key {{ 158 + loop.index0 }}
         pre-up {{ netns_command | trim }} ip link set up dev ipsec{{ loop.index0 }}
         post-up {{ netns_command | trim }} ip addr add {{ item.ipsec_net }} dev ipsec{{ loop.index0 }}
         {% for route in item.routes %}
