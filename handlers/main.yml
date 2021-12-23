@@ -1,4 +1,5 @@
 - name: Restart strongswan
-  service:
+  ansible.builtin.systemd:
     name: strongswan-starter
     state: restarted
+    daemon_reload: yes

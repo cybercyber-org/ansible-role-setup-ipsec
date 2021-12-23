@@ -26,11 +26,22 @@
     - Restart strongswan
 - name: "move strongswan into network-namespace if configured"
   when: "'ipsec_namespace' in vars"
-  ini_file:
-    path: /lib/systemd/system/strongswan-starter.service
-    option: NetworkNamespacePath
-    value: "/var/run/netns/{{ ipsec_namespace }}"
-    section: Service
+  block:
+    - name: create strongswan-starter.service.d directory
+      file:
+        path: /etc/systemd/system/strongswan-starter.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+    - name: create strongswan-starter.service drop-in
+      copy:
+        dest: /etc/systemd/system/strongswan-starter.service.d/override.conf
+        content: |
+          [Service]
+          NetworkNamespacePath=/var/run/netns/{{ bgp.netns }}
+      notify:
+        - Restart strongswan
 - name: "start strongswan"
   systemd:
     daemon_reload: true
