@@ -1,7 +1,15 @@
 - name: "Install Strongswan"
   package:
-    name: strongswan
+    name: "{{ item }}"
     update_cache: true
+  loop:
+    - strongswan
+    - charon-systemd
+    - strongswan-swanctl
+- name: "Deactivate systemd-starter"
+  ansible.builtin.systemd:
+    name: strongswan-starter
+    enabled: false
 - name: "Deactivate automatic routes"
   lineinfile:
     path: /etc/strongswan.d/charon.conf
@@ -10,33 +18,25 @@
     backrefs: true
 - name: "Add Strongswan config"
   template:
-    dest: /etc/ipsec.conf
-    src: files/ipsec.conf.template
+    dest: /etc/swanctl/conf.d/from-ansible.conf
+    src: files/swanctl.conf.template
     owner: root
     mode: "0644"
-  notify:
-    - Restart strongswan
-- name: "Add Strongswan secret"
-  template:
-    dest: /etc/ipsec.secrets
-    src: files/ipsec.secret.template
-    owner: root
-    mode: "0600"
   notify:
     - Restart strongswan
 - name: "move strongswan into network-namespace if configured"
   when: "'ipsec_namespace' in vars"
   block:
-    - name: create strongswan-starter.service.d directory
+    - name: create strongswan.service.d directory
       file:
-        path: /etc/systemd/system/strongswan-starter.service.d
+        path: /etc/systemd/system/strongswan.service.d
         state: directory
         owner: root
         group: root
         mode: 0755
-    - name: create strongswan-starter.service drop-in
+    - name: create strongswan.service drop-in
       copy:
-        dest: /etc/systemd/system/strongswan-starter.service.d/override.conf
+        dest: /etc/systemd/system/strongswan.service.d/override.conf
         content: |
           [Service]
           NetworkNamespacePath=/var/run/netns/{{ bgp.netns }}
@@ -45,7 +45,7 @@
 - name: "start strongswan"
   systemd:
     daemon_reload: true
-    name: strongswan-starter
+    name: strongswan
     enabled: true
     state: started
 - name: "prepare netns command"
@@ -60,8 +60,8 @@
       # ipsec to {{ item.name }}
       auto ipsec{{ loop.index0 }}
       iface ipsec{{ loop.index0 }} inet manual
-        # please note that the "key" is the same as the "mark" in ipsec.conf
-        pre-up {{ netns_command | trim }} ip tunnel add ipsec{{ loop.index0 }} local {{ item.me }} {{ "remote " + item.other if item.other != "%any" else "" }} mode vti key {{ 158 + loop.index0 }}
+        # please note that the "if_id" is the same as the "if_id_*" in swanctl.conf
+        pre-up {{ netns_command | trim }} ip link add ipsec{{ loop.index0 }} type xfrm dev lo if_id {{ 158 + loop.index0 }}
         pre-up {{ netns_command | trim }} ip link set up dev ipsec{{ loop.index0 }}
         post-up {{ netns_command | trim }} ip addr add {{ item.ipsec_net }} dev ipsec{{ loop.index0 }}
         {% if 'ipsec_net6' in item %}
@@ -70,5 +70,5 @@
         {% for route in item.routes %}
         post-up {{ netns_command | trim }} ip route replace {{ route }} via {{ item.ipsec_net | ansible.netcommon.ipaddr('peer') }}
         {% endfor %}
-        post-down {{ netns_command | trim }} ip tunnel del ipsec{{ loop.index0 }}
+        post-down {{ netns_command | trim }} ip link del ipsec{{ loop.index0 }}
       {% endfor %}

@@ -1,0 +1,43 @@
+connections {
+{% for peer in ipsec_peers %}
+  to-{{ peer.name }} {
+    local_addrs = {{ peer.me }}
+    remote_addrs = {{ peer.other }}
+    local {
+      auth = psk
+      id = {{ peer.myid if 'myid' in peer else peer.me }}
+    }
+    remote {
+      auth = psk
+      id = {{ peer.otherid if 'otherid' in peer else peer.other }}
+    }
+    mobike = no
+    version = 2
+    proposals = aes256-sha256-modp2048
+
+    children {
+      vti {
+        local_ts = 0.0.0.0/0,::/0
+        remote_ts = 0.0.0.0/0,::/0
+        esp_proposals = aes256-sha256-modp2048
+      }
+    }
+    # please note that the "if_id" here is the same as the "id_id" in the tunnel configuration
+    if_id_in = {{ 158 + loop.index0 }}
+    if_id_out = {{ 158 + loop.index0 }}
+  }
+{% endfor %}
+}
+
+secrets {
+{% for peer in ipsec_peers %}
+ ike-{{ loop.index }}-1 {
+   id-1 = {{ ansible_default_ipv4.address }}
+   secret = "{{ peer.psk }}"
+ }
+ ike-{{ loop.index }}-2 {
+   id-2 = {{ peer.other }}
+   secret = "{{ peer.psk }}"
+ }
+{% endfor %}
+}
