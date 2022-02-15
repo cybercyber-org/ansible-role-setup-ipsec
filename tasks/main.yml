@@ -62,6 +62,7 @@
       iface ipsec{{ loop.index0 }} inet manual
         # please note that the "if_id" is the same as the "if_id_*" in swanctl.conf
         pre-up {{ netns_command | trim }} ip link add ipsec{{ loop.index0 }} type xfrm dev lo if_id {{ 158 + loop.index0 }}
+        pre-up {{ netns_command | trim }} sysctl net.ipv6.conf.ipsec{{ loop.index0 }}.autoconf=0
         pre-up {{ netns_command | trim }} ip link set up dev ipsec{{ loop.index0 }}
         post-up {{ netns_command | trim }} ip addr add {{ item.ipsec_net }} dev ipsec{{ loop.index0 }}
         {% if 'ipsec_net6' in item %}
