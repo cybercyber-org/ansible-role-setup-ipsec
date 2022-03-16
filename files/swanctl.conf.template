@@ -32,11 +32,11 @@ connections {
 secrets {
 {% for peer in ipsec_peers %}
  ike-{{ loop.index }}-1 {
-   id-1 = {{ ansible_default_ipv4.address }}
+   id-1 = {{ peer.myid if 'myid' in peer else peer.me }}
    secret = "{{ peer.psk }}"
  }
  ike-{{ loop.index }}-2 {
-   id-2 = {{ peer.other }}
+   id-2 = {{ peer.otherid if 'otherid' in peer else peer.other }}
    secret = "{{ peer.psk }}"
  }
 {% endfor %}
